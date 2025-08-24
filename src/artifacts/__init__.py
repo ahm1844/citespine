@@ -1,0 +1,1 @@
+# Artifacts generation package

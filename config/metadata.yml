@@ -1,0 +1,27 @@
+framework:
+  allowed: ["IFRS","US_GAAP","Other"]
+  synonyms:
+    IFRS-15: "IFRS"
+    IFRS15: "IFRS"
+    us gaap: "US_GAAP"
+
+jurisdiction:
+  allowed: ["Global","US","EU","UK","Other"]
+  synonyms:
+    united states: "US"
+    european union: "EU"
+
+doc_type:
+  allowed: ["standard","filing","policy","memo","disclosure"]
+
+authority_level:
+  allowed: ["authoritative","interpretive","internal_policy"]
+
+required:
+  - title
+  - doc_type
+  - framework
+  - jurisdiction
+  - authority_level
+  - effective_date
+  - version
