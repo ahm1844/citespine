@@ -3,6 +3,7 @@ import csv
 import hashlib
 from pathlib import Path
 from typing import Dict, Any, Tuple
+from datetime import date
 import yaml
 from ..common.constants import EXCEPTIONS_CSV, REQUIRED_DOC_FIELDS
 
@@ -14,6 +15,13 @@ def compute_source_id(content: bytes) -> str:
 
 def _canon(s: str) -> str:
     return (s or "").strip()
+
+def _is_iso_date(s: str) -> bool:
+    try:
+        date.fromisoformat((s or "").strip())
+        return True
+    except Exception:
+        return False
 
 def normalize_field(name: str, raw: str, vocab: Dict[str, Any]) -> Tuple[str, str]:
     allowed = set(vocab.get(name, {}).get("allowed", []))
@@ -37,14 +45,21 @@ def normalize_record(rec: Dict[str, str], vocab: Dict[str, Any]) -> Tuple[Dict[s
             errors[f] = {"provided": rec.get(f, ""), "suggestion": s}
         else:
             out[f] = v
+
+    # Extra guard: strict ISO date format
+    if "effective_date" in out and not _is_iso_date(out["effective_date"]):
+        errors["effective_date"] = {"provided": rec.get("effective_date", ""), "suggestion": "YYYY-MM-DD"}
+        out.pop("effective_date", None)
+
     return out, errors
 
 def write_exception_row(filename: str, field: str, provided: str, suggestion: str, reason: str):
     path = Path(EXCEPTIONS_CSV)
     path.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not path.exists()
+    header = ["filename","field","provided","suggestion","reason"]
+    write_header = not path.exists() or path.stat().st_size == 0
     with path.open("a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        if new_file:
-            w.writerow(["filename","field","provided","suggestion","reason"])
+        if write_header:
+            w.writerow(header)
         w.writerow([filename, field, provided, suggestion, reason])
