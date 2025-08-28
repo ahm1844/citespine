@@ -1,12 +1,10 @@
-"""Progress logger for engineering steps (simple, human-readable)."""
+"""Progress logger: append-only, atomic writes."""
 from pathlib import Path
 from datetime import datetime
 from .constants import LOGS_DIR
 
-_PROGRESS_FILE = Path(LOGS_DIR) / "progress.log"
-_PROGRESS_FILE.parent.mkdir(parents=True, exist_ok=True)
-
 def log_progress(task: str, status: str, details: str = ""):
-    ts = datetime.utcnow().isoformat()
-    line = f"{ts}\t{task}\t{status}\t{details}\n"
-    _PROGRESS_FILE.write_text(_PROGRESS_FILE.read_text() + line if _PROGRESS_FILE.exists() else line)
+    path = Path(LOGS_DIR) / "progress.log"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:  # append only
+        f.write(f"{datetime.utcnow().isoformat()}\t{task}\t{status}\t{details}\n")

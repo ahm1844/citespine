@@ -1,7 +1,8 @@
 """Data Access helpers for Documents and Chunks."""
 from typing import Iterable, Sequence, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, bindparam
+from pgvector.sqlalchemy import Vector
 from .models import Document, Chunk
 from ..common.logging import get_logger
 from ..common.constants import EMBED_DIM
@@ -46,18 +47,24 @@ def create_ivfflat_index_if_missing(session: Session):
     session.commit()
     log.info("IVFFLAT cosine index ensured on chunks.embedding.")
 
-def ann_search(session: Session, qvec: Sequence[float], filters_sql: str, params: dict, top_k: int):
-    """Return rows ordered by cosine distance using pgvector <=> operator."""
-    # Note: we assume embedding vectors are normalized (cosine)
-    sql = f"""
-    SELECT chunk_id, source_id, text, section_path, page_start, page_end,
-           framework, jurisdiction, doc_type, authority_level, effective_date, version,
-           (embedding <=> :qvec) AS distance
-    FROM chunks
-    WHERE 1=1 {filters_sql}
-    ORDER BY embedding <=> :qvec
-    LIMIT :top_k
+def ann_search(session, qvec, filters_sql: str, params: dict, top_k: int, probes: int = 10):
     """
-    full_params = {**params, "qvec": list(qvec), "top_k": top_k}
-    rows = session.execute(text(sql), full_params).mappings().all()
+    ANN search with typed vector param, probes tuning, and date-aware tiebreak:
+    1) prioritize semantic similarity (embedding distance),
+    2) tiebreak by newest effective_date.
+    """
+    # Tune probes for better recall; 10–20 is a good PoC range.
+    session.execute(text("SET LOCAL ivfflat.probes = :p"), {"p": probes})
+
+    stmt = text(f"""
+        SELECT chunk_id, source_id, text, section_path, page_start, page_end,
+               framework, jurisdiction, doc_type, authority_level, effective_date, version,
+               (embedding <=> :qvec) AS distance
+        FROM chunks
+        WHERE 1=1 {filters_sql}
+        ORDER BY distance ASC, effective_date DESC
+        LIMIT :top_k
+    """).bindparams(bindparam("qvec", type_=Vector(EMBED_DIM)))
+
+    rows = session.execute(stmt, {**params, "qvec": list(qvec), "top_k": top_k}).mappings().all()
     return [dict(r) for r in rows]

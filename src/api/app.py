@@ -9,6 +9,7 @@ from ..answer.compose import compose_answer
 from ..retrieval.retriever import retrieve
 from ..ingest.runner import run_ingest
 from ..obs.manifest import write_manifest
+from ..artifacts.memo import build_memo
 
 log = get_logger("api")
 
@@ -25,6 +26,7 @@ class QueryRequest(BaseModel):
     q: str = Field(..., min_length=2)
     filters: QueryFilters = Field(default_factory=QueryFilters)
     top_k: int | None = None
+    probes: int | None = Field(default=None, ge=1, le=200)
 
 @app.get("/health")
 def health():
@@ -49,7 +51,7 @@ def api_exceptions():
 @app.post("/query")
 def api_query(req: QueryRequest):
     session = get_session()
-    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k)
+    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
     out = compose_answer(ev)
     manifest_path = write_manifest("query", {
         "q": req.q,
@@ -59,27 +61,29 @@ def api_query(req: QueryRequest):
     })
     return {**out, "run_manifest": manifest_path}
 
-# Minimal structured artifacts (grounded only: references + blank fields)
 @app.post("/generate/{artifact}")
 def api_generate(artifact: str, req: QueryRequest):
     session = get_session()
-    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k)
-    answer = compose_answer(ev)
-    # Very simple starter: map to generic structure with source map
-    art = {
-        "artifact_type": artifact,
-        "fields": {},      # keep blank; fill in a later step with mapping rules
-        "_source_map": [{"chunk_id": c["chunk_id"], "page_span": c["page_span"]} for c in answer.get("citations", [])],
-        "_flags": {},
-        "references": [c["chunk_id"] for c in answer.get("citations", [])]
-    }
+    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    artifact_lower = artifact.lower()
+    if artifact_lower == "memo":
+        artifact_json = build_memo(ev)
+    else:
+        # Safe default until dedicated mappers are added
+        artifact_json = {
+            "artifact_type": artifact,
+            "fields": {},
+            "_source_map": [{"chunk_id": e["chunk_id"], "page_span": [e.get("page_start") or 0, e.get("page_end") or 0]} for e in ev],
+            "_flags": {},
+            "references": [e["chunk_id"] for e in ev]
+        }
     manifest_path = write_manifest("artifact", {
-        "artifact": artifact,
+        "artifact": artifact_lower,
         "q": req.q,
         "filters": req.filters.model_dump(exclude_none=True),
-        "references": art["references"]
+        "references": artifact_json.get("references", [])
     })
-    return {"artifact": art, "run_manifest": manifest_path}
+    return {"artifact": artifact_json, "run_manifest": manifest_path}
 
 @app.get("/eval/report")
 def api_eval_report():
