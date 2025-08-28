@@ -54,7 +54,7 @@ def ann_search(session, qvec, filters_sql: str, params: dict, top_k: int, probes
     2) tiebreak by newest effective_date.
     """
     # Tune probes for better recall; 10–20 is a good PoC range.
-    session.execute(text("SET LOCAL ivfflat.probes = :p"), {"p": probes})
+    session.execute(text(f"SET LOCAL ivfflat.probes = {probes}"))
 
     stmt = text(f"""
         SELECT chunk_id, source_id, text, section_path, page_start, page_end,
