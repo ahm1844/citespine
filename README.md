@@ -1,5 +1,9 @@
 # CiteSpine
 
+<p align="center">
+  <img src="citespine-logo.png" alt="CiteSpine Logo" width="200"/>
+</p>
+
 *A compliance‑grade, metadata‑driven RAG assistant for financial reporting and audit.*
 
 ---
