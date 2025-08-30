@@ -1,0 +1,20 @@
+{
+  "q": "What does PCAOB require for ICFR audits?",
+  "filters": {
+    "jurisdiction": "US",
+    "as_of": "2024-12-31"
+  },
+  "top_k": 10,
+  "probes": 15,
+  "backend": "pgvector",
+  "latency_ms": 5711,
+  "citations": [
+    "f269b4a634cf74342a738e4a3e8d341fda7f0085681afe5d8390ef73846ce642:0001",
+    "48af69ef513ae41a72273a706cd8d69f98134b5ce975c6c7524be9d61e510a5f:0028",
+    "48af69ef513ae41a72273a706cd8d69f98134b5ce975c6c7524be9d61e510a5f:0333",
+    "48af69ef513ae41a72273a706cd8d69f98134b5ce975c6c7524be9d61e510a5f:0336",
+    "48af69ef513ae41a72273a706cd8d69f98134b5ce975c6c7524be9d61e510a5f:0001"
+  ],
+  "kind": "query",
+  "created_at": "2025-08-30T02:21:03.233903"
+}
