@@ -40,4 +40,8 @@ class Settings:
     DOWNLOAD_WORKERS: int = int(os.getenv("DOWNLOAD_WORKERS", "4"))
     DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "45"))
 
+    PINECONE_CREATE_INDEX: bool = os.getenv("PINECONE_CREATE_INDEX", "false").lower() == "true"
+    PINECONE_CLOUD: str = os.getenv("PINECONE_CLOUD", "aws")
+    PINECONE_REGION: str = os.getenv("PINECONE_REGION", "us-east-1")
+
 SETTINGS = Settings()

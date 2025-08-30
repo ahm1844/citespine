@@ -37,3 +37,6 @@ fetch_urls:
 
 parity:
 	docker compose run --rm api python -m src.eval.parity --top-k $(K) --probes $(P)
+
+pc_upsert:
+	docker compose run --rm api python -m src.tools.pinecone_upsert --processed-dir data/processed --namespace $(NS) --batch-size $(B) --max-chunks $(M) --create-index $(CREATE)
