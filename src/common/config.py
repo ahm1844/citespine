@@ -36,4 +36,8 @@ class Settings:
     PINECONE_HOST: str = os.getenv("PINECONE_HOST", "")  # optional, some regions require explicit host
     PINECONE_NAMESPACE: str = os.getenv("PINECONE_NAMESPACE", "default")
 
+    SEC_USER_AGENT: str = os.getenv("SEC_USER_AGENT", "CiteSpine/0.1 (contact@example.com)")
+    DOWNLOAD_WORKERS: int = int(os.getenv("DOWNLOAD_WORKERS", "4"))
+    DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "45"))
+
 SETTINGS = Settings()

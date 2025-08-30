@@ -31,3 +31,6 @@ label_add:
 	docker compose run --rm api python -m src.eval.label add $(Q) $(C)
 label_remove:
 	docker compose run --rm api python -m src.eval.label remove $(Q) $(C)
+
+fetch_urls:
+	docker compose run --rm api python -m src.tools.fetch_urls --urls-file $(URLS) --framework $(FW) --jurisdiction $(JUR) --doc-type $(DT) --authority-level $(AL) --effective-date $(EFD) --version $(VER) --title-prefix "$(TP)" --workers $(W)
