@@ -34,3 +34,6 @@ label_remove:
 
 fetch_urls:
 	docker compose run --rm api python -m src.tools.fetch_urls --urls-file $(URLS) --framework $(FW) --jurisdiction $(JUR) --doc-type $(DT) --authority-level $(AL) --effective-date $(EFD) --version $(VER) --title-prefix "$(TP)" --workers $(W)
+
+parity:
+	docker compose run --rm api python -m src.eval.parity --top-k $(K) --probes $(P)
