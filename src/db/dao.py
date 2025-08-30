@@ -1,7 +1,7 @@
 """Data Access helpers for Documents and Chunks."""
 from typing import Iterable, Sequence, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import text, bindparam
+from sqlalchemy import text, bindparam, select
 from pgvector.sqlalchemy import Vector
 from .models import Document, Chunk
 from ..common.logging import get_logger
@@ -68,3 +68,11 @@ def ann_search(session, qvec, filters_sql: str, params: dict, top_k: int, probes
 
     rows = session.execute(stmt, {**params, "qvec": list(qvec), "top_k": top_k}).mappings().all()
     return [dict(r) for r in rows]
+
+def get_chunk_text_map(session: Session, chunk_ids: list[str]) -> dict[str, str]:
+    if not chunk_ids:
+        return {}
+    res = session.execute(
+        select(Chunk.chunk_id, Chunk.text).where(Chunk.chunk_id.in_(chunk_ids))
+    ).all()
+    return {cid: txt for cid, txt in res}

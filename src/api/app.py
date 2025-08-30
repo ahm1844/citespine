@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Body
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List
+import time
 from ..common.logging import get_logger
 from ..common.progress import log_progress
 from ..common.constants import EXCEPTIONS_CSV, PROCESSED_DIR
+from ..common.config import SETTINGS
 from ..db.session import get_session
 from ..answer.compose import compose_answer
-from ..retrieval.retriever import retrieve
+from ..retrieval.router import retrieve_any
 from ..ingest.runner import run_ingest
 from ..obs.manifest import write_manifest
 from ..artifacts.memo import build_memo
@@ -51,20 +53,25 @@ def api_exceptions():
 @app.post("/query")
 def api_query(req: QueryRequest):
     session = get_session()
-    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    t0 = time.perf_counter()
+    ev = retrieve_any(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    latency_ms = int((time.perf_counter() - t0) * 1000)
     out = compose_answer(ev)
     manifest_path = write_manifest("query", {
         "q": req.q,
         "filters": req.filters.model_dump(exclude_none=True),
         "top_k": req.top_k,
+        "probes": req.probes or 10,
+        "backend": SETTINGS.VECTOR_BACKEND,
+        "latency_ms": latency_ms,
         "citations": [c["chunk_id"] for c in out.get("citations", [])]
     })
-    return {**out, "run_manifest": manifest_path}
+    return {**out, "run_manifest": manifest_path, "latency_ms": latency_ms, "backend": SETTINGS.VECTOR_BACKEND}
 
 @app.post("/generate/{artifact}")
 def api_generate(artifact: str, req: QueryRequest):
     session = get_session()
-    ev = retrieve(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    ev = retrieve_any(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
     artifact_lower = artifact.lower()
     if artifact_lower == "memo":
         artifact_json = build_memo(ev)
@@ -81,9 +88,10 @@ def api_generate(artifact: str, req: QueryRequest):
         "artifact": artifact_lower,
         "q": req.q,
         "filters": req.filters.model_dump(exclude_none=True),
+        "backend": SETTINGS.VECTOR_BACKEND,
         "references": artifact_json.get("references", [])
     })
-    return {"artifact": artifact_json, "run_manifest": manifest_path}
+    return {"artifact": artifact_json, "run_manifest": manifest_path, "backend": SETTINGS.VECTOR_BACKEND}
 
 @app.get("/eval/report")
 def api_eval_report():

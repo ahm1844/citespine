@@ -27,4 +27,17 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_EMBED_MODEL: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
 
+    # Vector backend: "pgvector" (default) or "pinecone"
+    VECTOR_BACKEND: str = os.getenv("VECTOR_BACKEND", "pgvector").lower()
+
+    # Pinecone (used only if VECTOR_BACKEND=pinecone)
+    PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
+    PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "")
+    PINECONE_HOST: str = os.getenv("PINECONE_HOST", "")  # optional, some regions require explicit host
+    PINECONE_NAMESPACE: str = os.getenv("PINECONE_NAMESPACE", "default")
+
+    SEC_USER_AGENT: str = os.getenv("SEC_USER_AGENT", "CiteSpine/0.1 (contact@example.com)")
+    DOWNLOAD_WORKERS: int = int(os.getenv("DOWNLOAD_WORKERS", "4"))
+    DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "45"))
+
 SETTINGS = Settings()
