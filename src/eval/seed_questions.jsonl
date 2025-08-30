@@ -1,2 +1,2 @@
-{"id": "Q001", "q": "What are disclosure requirements under IFRS as of 2023?", "filters": {"framework": "IFRS", "jurisdiction": "Global", "as_of": "2023-12-31"}, "gold_chunks": ["test-chunk-123"]}
-{"id": "Q002", "q": "How does US GAAP treat lease recognition?", "filters": {"framework": "US_GAAP", "jurisdiction": "US", "as_of": "2023-12-31"}, "gold_chunks": []}
+{"id": "Q001", "q": "What are disclosure requirements under IFRS as of 2023?", "filters": {"framework": "IFRS", "jurisdiction": "Global", "as_of": "2023-12-31"}, "gold_chunks": ["test-chunk-123", "f269b4a634cf74342a738e4a3e8d341fda7f0085681afe5d8390ef73846ce642:0001"]}
+{"id": "Q002", "q": "How does US GAAP treat lease recognition?", "filters": {"framework": "US_GAAP", "jurisdiction": "US", "as_of": "2023-12-31"}, "gold_chunks": ["e92380201e2234ef92f04a81bbb7bcaaa9b1c318f7b85f76c0cbfc0f070e939a:0001"]}

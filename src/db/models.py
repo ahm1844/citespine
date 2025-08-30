@@ -54,5 +54,4 @@ class Chunk(Base):
     __table_args__ = (
         Index("idx_chunk_filters", "framework", "jurisdiction", "doc_type", "authority_level"),
         Index("idx_chunk_asof", "framework", "jurisdiction", "effective_date", "version"),
-        UniqueConstraint("source_id", "section_path", "text", name="uq_source_section_text"),
     )
