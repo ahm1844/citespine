@@ -26,3 +26,8 @@ lint:
 
 test:
 	pytest -q
+
+label_add:
+	docker compose run --rm api python -m src.eval.label add $(Q) $(C)
+label_remove:
+	docker compose run --rm api python -m src.eval.label remove $(Q) $(C)
