@@ -247,6 +247,23 @@ Try a question outside the corpus to see a guarded "no evidence found" response.
 
 ---
 
+## Release Notes
+
+### v0.1.0-poc (pgvector baseline)
+
+* Quality: recall@10 = **0.92** (11/12 seeds), faithfulness enforced by "no citation → no claim".
+* Config: dense-only (pgvector), `probes=15`, `CHUNK_SIZE=900`, `OVERLAP=150`.
+* Corpus: PCAOB + ESMA PDFs (public).
+* Reproducibility: manifests written for queries and eval runs.
+* Note: *in our project with the client, we are gonna use Pinecone... for our project, we will use pgvector.* Pinecone parity tools are ready and can be run when credentials are provided.
+
+**Evaluation Metrics:**
+```
+Seeds: 12 | Recall@10: 0.92 | Probes: 15 | Backend: pgvector | Chunk: 900/150
+```
+
+---
+
 ## Quick start
 
 1. **Clone & bootstrap**
