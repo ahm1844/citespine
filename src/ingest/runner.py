@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
-from ..common.constants import RAW_DIR, PROCESSED_DIR, EXCEPTIONS_CSV, CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS
+from ..common.constants import RAW_DIR, PROCESSED_DIR, EXCEPTIONS_CSV
 from ..common.logging import get_logger
 from ..common.progress import log_progress
 from .metadata import load_vocab, normalize_record, write_exception_row, compute_source_id
@@ -68,7 +68,7 @@ def run_ingest():
             rejected += 1
             continue
 
-        chunks = chunk_text(full_text, CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS)
+        chunks = chunk_text(full_text)
         if not chunks:
             write_exception_row(filename, "chunking", "", "", "no_chunks_produced")
             log.error(f"Rejected {filename}: chunker produced 0 chunks")

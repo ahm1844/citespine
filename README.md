@@ -151,6 +151,102 @@ citespine/
 
 ---
 
+## Demo Walkthrough
+
+> Backend policy: **in our project with the client, we are gonna use Pinecone... for our project, we will use pgvector.**  
+> Flip via `.env` or per-command env vars (see below).
+
+### Prerequisites
+- Docker Desktop (WSL2 on Windows)
+- `docker compose up -d` starts `postgres` + `api`
+- A small corpus ingested & indexed (PCAOB/ESMA PDFs)
+- Seed set at `src/eval/seed_questions.jsonl` (10–15 questions)
+
+### 1) Run the demo UI
+Open: **http://localhost:8000/demo**  
+What to watch:
+- `backend` indicator (`pgvector` / `pinecone`)
+- `latency_ms`
+- `citations[]` with `chunk_id` and `page_span`
+- Every answer has a **run manifest** (see `data/manifests/query_*.json`)
+
+### 2) Query examples (copy/paste)
+```bash
+curl -s -X POST http://localhost:8000/query -H "Content-Type: application/json" \
+  -d '{"q":"What does PCAOB require for ICFR audits?","filters":{"framework":"Other","jurisdiction":"US","doc_type":"standard","authority_level":"authoritative","as_of":"2024-12-31"},"top_k":10,"probes":15}' | jq .
+```
+
+```bash
+curl -s -X POST http://localhost:8000/query -H "Content-Type: application/json" \
+  -d '{"q":"What are ESEF primary statement tagging requirements?","filters":{"framework":"Other","jurisdiction":"EU","doc_type":"standard","authority_level":"authoritative","as_of":"2024-12-31"},"top_k":10,"probes":15}' | jq .
+```
+
+### 3) Grounded memo generation
+
+```bash
+curl -s -X POST http://localhost:8000/generate/memo -H "Content-Type: application/json" \
+  -d '{"q":"Key PCAOB requirements for substantive analytical procedures","filters":{"framework":"Other","jurisdiction":"US","doc_type":"standard","authority_level":"authoritative","as_of":"2024-12-31"}}' | jq .
+```
+
+* Fields populate **only** when supported by cited text.
+* Missing evidence ⇒ field blank + flag (no hallucinations).
+
+### 4) Evaluation
+
+```bash
+make eval
+# Output includes recall@10 on the seed set and a manifest path.
+```
+
+Acceptance target: **recall@10 ≥ 0.80**, faithfulness = 100%.
+
+### 5) Pinecone (client parity)
+
+**Hydrate** (from processed JSONL):
+
+```bash
+docker compose run --rm \
+  -e PINECONE_API_KEY="***" -e PINECONE_INDEX_NAME="citespine" -e PINECONE_NAMESPACE="default" \
+  api python -m src.tools.pinecone_upsert --processed-dir data/processed --namespace default --batch-size 200 --max-chunks -1 --create-index false
+```
+
+**Parity check** (one-shot):
+
+```bash
+docker compose run --rm \
+  -e VECTOR_BACKEND="pinecone" \
+  -e PINECONE_API_KEY="***" -e PINECONE_INDEX_NAME="citespine" -e PINECONE_NAMESPACE="default" \
+  api python -m src.eval.parity --top-k 10 --probes 15
+```
+
+Open: `data/eval/parity_*/report.json`
+
+### 6) Reproducibility
+
+Every `/query` and `/generate` writes a **manifest** with:
+
+* model, parameters, corpus hash, cited chunk IDs, latency, backend.
+  Re-run from a manifest to reproduce the same sources and materially identical answers.
+
+### 7) No evidence → no claim
+
+Try a question outside the corpus to see a guarded "no evidence found" response. This enforces compliance-grade answers.
+
+---
+
+## Pinecone credentials (secure handling)
+
+- **Do not** commit keys or `.env`.
+- Prefer **ephemeral env** (as shown).  
+- For interactive API runs, you can keep a private `my.env` **outside the repo** and do:
+  ```bash
+  docker compose --env-file ../my.env up -d --force-recreate api
+  ```
+
+* Confirm index: `dimension=384`, `metric=cosine`, `namespace=default`.
+
+---
+
 ## Quick start
 
 1. **Clone & bootstrap**

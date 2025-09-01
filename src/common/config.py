@@ -44,7 +44,7 @@ class Settings:
     PINECONE_CLOUD: str = os.getenv("PINECONE_CLOUD", "aws")
     PINECONE_REGION: str = os.getenv("PINECONE_REGION", "us-east-1")
 
-    # Re-ranking (optional lever for recall improvement)
+    # Re-ranking (optional lever for recall improvement) - OFF by default
     RERANK_ENABLE: bool = os.getenv("RERANK_ENABLE", "false").lower() == "true"
     RERANK_MODEL: str = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
     RERANK_CANDIDATES: int = int(os.getenv("RERANK_CANDIDATES", "50"))

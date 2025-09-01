@@ -24,7 +24,7 @@ def evaluate():
     preds = []
     golds = []
     for s in seeds:
-        res = retrieve(session, s["q"], s.get("filters", {}), top_k=10, probes=20)
+        res = retrieve(session, s["q"], s.get("filters", {}), top_k=10, probes=15)
         preds.append([r["chunk_id"] for r in res])
         golds.append(s.get("gold_chunks", []))
 
