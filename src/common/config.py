@@ -49,4 +49,15 @@ class Settings:
     RERANK_MODEL: str = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
     RERANK_CANDIDATES: int = int(os.getenv("RERANK_CANDIDATES", "50"))
 
+    # Hybrid retrieval (sparse + dense)
+    HYBRID_ENABLE: bool = os.getenv("HYBRID_ENABLE", "false").lower() == "true"
+    HYBRID_K_DENSE: int = int(os.getenv("HYBRID_K_DENSE", "100"))   # dense candidate depth
+    HYBRID_K_SPARSE: int = int(os.getenv("HYBRID_K_SPARSE", "100")) # sparse candidate depth
+    HYBRID_W_DENSE: float = float(os.getenv("HYBRID_W_DENSE", "0.6"))
+    HYBRID_W_SPARSE: float = float(os.getenv("HYBRID_W_SPARSE", "0.4"))
+
+    # Sparse query synonym expansion (applies only to FTS path)
+    SYN_EXPAND_ENABLE: bool = os.getenv("SYN_EXPAND_ENABLE", "false").lower() == "true"
+    SYN_DEBUG_LOG: bool = os.getenv("SYN_DEBUG_LOG", "false").lower() == "true"
+
 SETTINGS = Settings()

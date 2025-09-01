@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ..common.config import SETTINGS
 from ..embedding.provider import EmbeddingProvider
 from .retriever import retrieve as retrieve_pg
+from .hybrid import hybrid_retrieve
 from ..common.logging import get_logger
 
 log = get_logger("retrieval/router")
@@ -41,7 +42,11 @@ def retrieve_any(session: Session, query_text: str, filters: Dict, top_k: int | 
         _hydrate_texts_from_pg(session, hits)
         return hits
     
-    # pgvector flow with optional rerank
+    # pgvector path
+    if SETTINGS.HYBRID_ENABLE:
+        return hybrid_retrieve(session, query_text, filters or {}, top_k or SETTINGS.TOP_K)
+    
+    # default dense-only (with optional rerank)
     final_k = top_k or SETTINGS.TOP_K
     candidate_k = SETTINGS.RERANK_CANDIDATES if SETTINGS.RERANK_ENABLE else final_k
     
