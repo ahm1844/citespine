@@ -40,3 +40,6 @@ parity:
 
 pc_upsert:
 	docker compose run --rm api python -m src.tools.pinecone_upsert --processed-dir data/processed --namespace $(NS) --batch-size $(B) --max-chunks $(M) --create-index $(CREATE)
+
+seed_diag:
+	docker compose run --rm api python -m src.eval.seed_diag --top-k $(K) --probes $(P)

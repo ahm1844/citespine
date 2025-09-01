@@ -40,5 +40,15 @@ def retrieve_any(session: Session, query_text: str, filters: Dict, top_k: int | 
         hits = store.query(qvec, top_k or SETTINGS.TOP_K, filters or {})
         _hydrate_texts_from_pg(session, hits)
         return hits
-    # default: pgvector
-    return retrieve_pg(session, query_text, filters or {}, top_k, probes)
+    
+    # pgvector flow with optional rerank
+    final_k = top_k or SETTINGS.TOP_K
+    candidate_k = SETTINGS.RERANK_CANDIDATES if SETTINGS.RERANK_ENABLE else final_k
+    
+    hits = retrieve_pg(session, query_text, filters or {}, top_k=candidate_k, probes=probes)
+    
+    if SETTINGS.RERANK_ENABLE:
+        from .rerank import rerank
+        return rerank(query_text, hits, SETTINGS.RERANK_MODEL, final_k)
+    
+    return hits
