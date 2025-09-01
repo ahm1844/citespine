@@ -114,5 +114,10 @@ data/raw/*.pdf
 data/processed/
 logs/
 
+# Generated manifests and evaluation results
+data/manifests/
+data/eval/
+**/index_manifest.json
+
 # Docker volumes
 docker-compose.override.yml
