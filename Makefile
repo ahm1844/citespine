@@ -43,3 +43,6 @@ pc_upsert:
 
 seed_diag:
 	docker compose run --rm api python -m src.eval.seed_diag --top-k $(K) --probes $(P)
+
+seed_dump:
+	docker compose run --rm api python -m src.eval.seed_dump --top-k $(K) --probes $(P) --ids "$(IDS)"
