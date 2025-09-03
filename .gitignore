@@ -109,15 +109,26 @@ dmypy.json
 .cursor/
 .cursorignore
 
-# Downloaded PDFs and processed data (optional - comment if you want to track)
-data/raw/*.pdf
-data/processed/
-logs/
+# env & OS
+.env
+.DS_Store
+.idea/
+.vscode/
 
-# Generated manifests and evaluation results
+# data (runtime)
+data/leads.csv
+data/uploads/
+data/processed/
 data/manifests/
 data/eval/
+data/raw/*.pdf
 **/index_manifest.json
+logs/
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
 # Docker volumes
 docker-compose.override.yml

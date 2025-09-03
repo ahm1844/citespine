@@ -70,67 +70,49 @@ Financial reporting and audit teams need **fast, accurate, and well‑sourced an
 ## Repository layout
 
 ```
-citespine/
-  README.md
-  TECHNICAL_SPEC.md
-  .env.example
-  docker-compose.yml
-  Dockerfile
-  Makefile
-  requirements.txt
-
-  config/
-    metadata.yml             # controlled vocabularies + synonym rules
-    prompts/                 # system & composer templates
-
-  data/
-    raw/                     # drop PDFs here
-    processed/               # normalized chunks + metadata (JSONL)
-    eval/                    # seed questions, gold spans, and run reports
-
-  src/
-    ingest/
-      parse_pdf.py
-      ocr.py
-      extract_tables.py
-      normalize_metadata.py
-      chunker.py
-    index/
-      schemas.py
-      build_index.py
-      pinecone_adapter.py    # same call-shapes as Pinecone; backed by pgvector
-    retrieve/
-      query.py
-      filters.py
-      rerank.py              # in-process cross-encoder (optional)
-    answer/
-      compose.py
-      citations.py
-    artifacts/
-      memo.py
-      journal_entry.py
-      disclosure.py
-      schemas/
-        memo.schema.json
-        journal_entry.schema.json
-        disclosure.schema.json
-    eval/
-      seed_questions.jsonl
-      evaluate.py
-      metrics.py
-    api/
-      app.py                 # FastAPI
-      routes/
-        ingest.py
-        query.py
-        generate.py
-        eval.py
-    ui/
-      app.py                 # optional Streamlit demo
-
-  tests/
-    unit/
-    integration/
+.
+├─ docker-compose.yml
+├─ README.md
+├─ public/                      # static landing page served at /site
+│  └─ index.html
+├─ frontend/                    # React app (served at /app after build)
+│  ├─ package.json
+│  ├─ vite.config.js
+│  ├─ index.html
+│  ├─ src/
+│  │  ├─ main.tsx
+│  │  ├─ App.tsx
+│  │  └─ components/
+│  │     ├─ Dropzone.tsx
+│  │     ├─ QueryForm.tsx
+│  │     └─ Citations.tsx
+│  └─ styles.css
+├─ src/
+│  ├─ api/
+│  │  ├─ app.py                 # FastAPI app, routes, static mounts
+│  │  └─ auth.py                # invite cookie + API key guards
+│  ├─ common/
+│  │  └─ config.py              # env settings (INVITE_TOKEN, COOKIE_DOMAIN, etc.)
+│  ├─ db/
+│  │  ├─ models.py              # Document, Chunk, APIKey...
+│  │  └─ session.py             # engine/session
+│  ├─ ingest/
+│  │  ├─ runner.py              # ingest_single_pdf + batch pipeline
+│  │  └─ ...                    # parse_pdf, chunker, metadata…
+│  ├─ retrieval/
+│  │  └─ router.py              # retrieve_any (pgvector by default)
+│  ├─ answer/
+│  │  └─ compose.py             # "no citation → no claim"
+│  ├─ tools/
+│  │  └─ apikeys.py             # CLI: create/list/revoke API keys
+│  └─ eval/                     # seed, eval harness, parity tools
+│     └─ ...
+└─ data/
+   ├─ uploads/                  # uploaded PDFs (gitignored)
+   ├─ manifests/                # run manifests (gitignored)
+   ├─ processed/                # chunks/embeddings (gitignored)
+   ├─ eval/                     # eval reports (gitignored)
+   └─ leads.csv                 # lead capture (gitignored)
 ```
 
 ---
@@ -326,13 +308,16 @@ make eval             # runs seed set; writes data/eval/<timestamp>/*
 
 ---
 
-## Using the API
+### Gated Demo & API
 
-* `POST /ingest` → ingest/validate PDFs found in `data/raw/`
-* `GET  /ingest/exceptions` → list unresolved validation exceptions
-* `POST /query` → body: `{ "q": "How does IFRS vs US GAAP treat...?", "filters": { "framework": "IFRS", "jurisdiction": "Global", "as_of": "2023-12-31" } }`
-* `POST /generate/memo|journal|disclosure` → returns JSON artifact with only **cited** fields
-* `GET  /eval/report` → latest recall\@k + faithfulness + run manifest id
+- **Set invite cookie:** `http://HOST/auth/invite?token=LETMEIN`
+- **Public page:** `http://HOST/site`
+- **App (after build):** `http://HOST/app`
+- **Upload:** `POST /upload` (invite required)
+- **UI query:** `POST /query` (invite required)
+- **Programmatic query:** `POST /v1/query` with `X-Api-Key: <key>` (generate with `python -m src.tools.apikeys --name <label>`)
+
+We enforce **no citation → no claim**. If we can't find evidence, we say "No evidence found."
 
 ---
 

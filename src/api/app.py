@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Depends, UploadFile, File, Form, Response, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
-from typing import Dict, Any, List
-import time
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field, EmailStr
+from typing import Dict, Any, List, Optional
+import time, csv, shutil
+from pathlib import Path
+from datetime import datetime
 from ..common.logging import get_logger
 from ..common.progress import log_progress
 from ..common.constants import EXCEPTIONS_CSV, PROCESSED_DIR
@@ -10,13 +13,81 @@ from ..common.config import SETTINGS
 from ..db.session import get_session
 from ..answer.compose import compose_answer
 from ..retrieval.router import retrieve_any
-from ..ingest.runner import run_ingest
+from ..ingest.runner import run_ingest, ingest_single_pdf
 from ..obs.manifest import write_manifest
 from ..artifacts.memo import build_memo
+from .auth import require_invite, set_invite_cookie, require_api_key
 
 log = get_logger("api")
 
 app = FastAPI(title="CiteSpine API", version="0.1.0")
+
+# Serve public landing page and built React app
+app.mount("/site", StaticFiles(directory="public", html=True), name="site")
+app.mount("/app", StaticFiles(directory="frontend/dist", html=True), name="app")
+
+# Authentication routes
+@app.get("/auth/invite")
+def auth_invite(token: str, response: Response):
+    return set_invite_cookie(token, response)
+
+# Lead capture for public site
+LEADS_CSV = Path("data/leads.csv"); LEADS_CSV.parent.mkdir(parents=True, exist_ok=True)
+
+class Lead(BaseModel):
+    name: str
+    email: EmailStr
+    company: str | None = None
+    message: str | None = None
+
+@app.post("/public/lead")
+def public_lead(lead: Lead, request: Request):
+    new = not LEADS_CSV.exists()
+    with LEADS_CSV.open("a", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        if new: w.writerow(["ts","name","email","company","message","ip"])
+        w.writerow([datetime.utcnow().isoformat(), lead.name, lead.email, lead.company or "", lead.message or "", request.client.host if request.client else ""])
+    return {"ok": True}
+
+# Suggestions for first-time users (invite-gated)
+DEFAULT_SUGGESTIONS = [
+    "What does PCAOB require for ICFR audits?",
+    "What are ESEF inline XBRL tagging requirements?",
+    "Show disclosure guidance for revenue recognition.",
+]
+
+@app.get("/suggestions", dependencies=[Depends(require_invite)])
+def suggestions():
+    return {"suggestions": DEFAULT_SUGGESTIONS}
+
+# Upload single PDF
+@app.post("/upload", dependencies=[Depends(require_invite)])
+async def upload_pdf(
+    file: UploadFile = File(...),
+    framework: Optional[str] = Form(None),
+    jurisdiction: Optional[str] = Form(None),
+    doc_type: Optional[str] = Form(None),
+    authority_level: Optional[str] = Form(None),
+    effective_date: Optional[str] = Form(None),
+    version: Optional[str] = Form(None),
+):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF supported")
+    Path(SETTINGS.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+    dest = Path(SETTINGS.UPLOAD_DIR) / file.filename
+    with dest.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    meta = {
+        "title": file.filename,
+        "framework": framework,
+        "jurisdiction": jurisdiction,
+        "doc_type": doc_type,
+        "authority_level": authority_level,
+        "effective_date": effective_date,
+        "version": version,
+    }
+    return ingest_single_pdf(str(dest), meta)
 
 class QueryFilters(BaseModel):
     framework: str | None = None
@@ -26,10 +97,10 @@ class QueryFilters(BaseModel):
     as_of: str | None = None
 
 class QueryRequest(BaseModel):
-    q: str = Field(..., min_length=2)
-    filters: QueryFilters = Field(default_factory=QueryFilters)
-    top_k: int | None = None
-    probes: int | None = Field(default=None, ge=1, le=200)
+    q: str
+    filters: Dict[str, Any] = Field(default_factory=dict)
+    top_k: Optional[int] = 10
+    probes: Optional[int] = 15
 
 @app.get("/health")
 def health():
@@ -51,16 +122,17 @@ def api_exceptions():
     except FileNotFoundError:
         return {"csv_path": EXCEPTIONS_CSV, "rows": []}
 
-@app.post("/query")
-def api_query(req: QueryRequest):
+# UI query (invite)
+@app.post("/query", dependencies=[Depends(require_invite)])
+def ui_query(req: QueryRequest):
     session = get_session()
     t0 = time.perf_counter()
-    ev = retrieve_any(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    hits = retrieve_any(session, req.q, req.filters, req.top_k, probes=req.probes or 10)
     latency_ms = int((time.perf_counter() - t0) * 1000)
-    out = compose_answer(ev)
+    out = compose_answer(hits)
     manifest_path = write_manifest("query", {
         "q": req.q,
-        "filters": req.filters.model_dump(exclude_none=True),
+        "filters": req.filters,
         "top_k": req.top_k,
         "probes": req.probes or 10,
         "backend": SETTINGS.VECTOR_BACKEND,
@@ -69,10 +141,29 @@ def api_query(req: QueryRequest):
     })
     return {**out, "run_manifest": manifest_path, "latency_ms": latency_ms, "backend": SETTINGS.VECTOR_BACKEND}
 
-@app.post("/generate/{artifact}")
+# Programmatic query (API key)
+@app.post("/v1/query", dependencies=[Depends(require_api_key)])
+def api_query_v1(req: QueryRequest):
+    session = get_session()
+    t0 = time.perf_counter()
+    hits = retrieve_any(session, req.q, req.filters, req.top_k, probes=req.probes or 10)
+    latency_ms = int((time.perf_counter() - t0) * 1000)
+    out = compose_answer(hits)
+    manifest_path = write_manifest("query", {
+        "q": req.q,
+        "filters": req.filters,
+        "top_k": req.top_k,
+        "probes": req.probes or 10,
+        "backend": SETTINGS.VECTOR_BACKEND,
+        "latency_ms": latency_ms,
+        "citations": [c["chunk_id"] for c in out.get("citations", [])]
+    })
+    return {**out, "run_manifest": manifest_path, "latency_ms": latency_ms, "backend": SETTINGS.VECTOR_BACKEND}
+
+@app.post("/generate/{artifact}", dependencies=[Depends(require_invite)])
 def api_generate(artifact: str, req: QueryRequest):
     session = get_session()
-    ev = retrieve_any(session, req.q, req.filters.model_dump(exclude_none=True), req.top_k, probes=req.probes or 10)
+    ev = retrieve_any(session, req.q, req.filters, req.top_k, probes=req.probes or 10)
     artifact_lower = artifact.lower()
     if artifact_lower == "memo":
         artifact_json = build_memo(ev)
@@ -88,7 +179,7 @@ def api_generate(artifact: str, req: QueryRequest):
     manifest_path = write_manifest("artifact", {
         "artifact": artifact_lower,
         "q": req.q,
-        "filters": req.filters.model_dump(exclude_none=True),
+        "filters": req.filters,
         "backend": SETTINGS.VECTOR_BACKEND,
         "references": artifact_json.get("references", [])
     })
@@ -99,7 +190,7 @@ def api_eval_report():
     # Placeholder until Step 10 implements evaluation harness
     return {"status": "not_run_yet", "message": "Run `make eval` after Step 10 to populate results."}
 
-@app.get("/demo", response_class=HTMLResponse)
+@app.get("/demo", response_class=HTMLResponse, dependencies=[Depends(require_invite)])
 def demo_page():
     # Simple, dependency-free UI for live demo.
     return """

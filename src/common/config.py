@@ -40,6 +40,12 @@ class Settings:
     DOWNLOAD_WORKERS: int = int(os.getenv("DOWNLOAD_WORKERS", "4"))
     DOWNLOAD_TIMEOUT: int = int(os.getenv("DOWNLOAD_TIMEOUT", "45"))
 
+    # Authentication & Access Control
+    INVITE_TOKEN: str = os.getenv("INVITE_TOKEN", "").strip()  # leave blank to disable gating
+    COOKIE_DOMAIN: str = os.getenv("COOKIE_DOMAIN", "").strip()  # ".yourdomain.com" or blank for localhost
+    API_KEY_HEADER: str = os.getenv("API_KEY_HEADER", "X-Api-Key")
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "data/uploads")
+
     PINECONE_CREATE_INDEX: bool = os.getenv("PINECONE_CREATE_INDEX", "false").lower() == "true"
     PINECONE_CLOUD: str = os.getenv("PINECONE_CLOUD", "aws")
     PINECONE_REGION: str = os.getenv("PINECONE_REGION", "us-east-1")

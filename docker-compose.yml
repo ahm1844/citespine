@@ -19,7 +19,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: [.env]
+    environment:
+      PG_DSN: "postgresql+psycopg://postgres:postgres@postgres:5432/citespine"
+      VECTOR_BACKEND: "pgvector"
+      LLM_PROVIDER: "ollama"
+      EMBEDDINGS_PROVIDER: "local"
+      AS_OF_DEFAULT: "2023-12-31"
+      TOP_K: "10"
+      CHUNK_SIZE: "900"
+      CHUNK_OVERLAP: "150"
+      INVITE_TOKEN: "letmein"
     volumes:
       - ./:/app
     ports: ["8000:8000"]

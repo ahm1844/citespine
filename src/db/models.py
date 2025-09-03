@@ -1,7 +1,8 @@
 """ORM models for Document and Chunk (with pgvector)."""
 from sqlalchemy.orm import declarative_base, relationship, Mapped, mapped_column
-from sqlalchemy import String, Text, Date, Integer, ForeignKey, Index, UniqueConstraint
+from sqlalchemy import String, Text, Date, Integer, ForeignKey, Index, UniqueConstraint, Boolean, DateTime
 from pgvector.sqlalchemy import Vector
+from datetime import datetime
 from ..common.constants import EMBED_DIM
 
 Base = declarative_base()
@@ -55,3 +56,11 @@ class Chunk(Base):
         Index("idx_chunk_filters", "framework", "jurisdiction", "doc_type", "authority_level"),
         Index("idx_chunk_asof", "framework", "jurisdiction", "effective_date", "version"),
     )
+
+class APIKey(Base):
+    __tablename__ = "api_keys"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(120))
+    key_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True)  # sha256
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

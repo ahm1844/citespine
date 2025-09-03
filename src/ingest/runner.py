@@ -9,6 +9,9 @@ from ..common.constants import RAW_DIR, PROCESSED_DIR, EXCEPTIONS_CSV
 from ..common.logging import get_logger
 from ..common.progress import log_progress
 from .metadata import load_vocab, normalize_record, write_exception_row, compute_source_id
+
+# Alias for compatibility with the new API
+load_metadata_vocab = load_vocab
 from .parse_pdf import extract_text_by_page
 from .ocr import ocr_page
 from .chunker import chunk_text, count_tokens
@@ -108,6 +111,93 @@ def run_ingest():
         "exceptions_report": EXCEPTIONS_CSV if Path(EXCEPTIONS_CSV).exists() else None,
         "processed_dir": PROCESSED_DIR
     }, indent=2))
+
+def ingest_single_pdf(pdf_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """Single PDF ingest function that bypasses the manifest.csv system."""
+    from pathlib import Path
+    from datetime import datetime, date
+    from ..embedding.provider import EmbeddingProvider
+    from ..db.session import get_session
+    from ..db.dao import upsert_document, upsert_chunks
+    from ..db.init_db import init_db
+    
+    # Initialize database
+    init_db()
+    
+    vocab = load_metadata_vocab(Path("config/metadata.yml"))
+    meta_norm, errors = normalize_record(metadata, vocab)
+    if errors:
+        return {"accepted": False, "errors": errors}
+
+    pdf_file = Path(pdf_path)
+    bytes_ = pdf_file.read_bytes()
+    source_id = compute_source_id(bytes_)
+    pages = extract_text_by_page(pdf_file)
+
+    # Extract and merge text from all pages with OCR fallback
+    merged = []
+    for n, txt in pages:
+        tt = (txt or "").strip()
+        if len(tt) < 20:
+            oc = ocr_page(pdf_file, n) or ""
+            tt = oc if len(oc) > len(tt) else tt
+        merged.append(tt)
+    full_text = "\n\n".join(merged).strip()
+    
+    if not full_text:
+        return {"accepted": False, "errors": {"parse": "Empty text"}}
+
+    chunks = chunk_text(full_text)
+    if not chunks:
+        return {"accepted": False, "errors": {"chunk": "No chunks produced"}}
+
+    # Generate embeddings
+    embedder = EmbeddingProvider()
+    vectors = embedder.embed_texts(chunks)
+    
+    # Prepare data for database insertion
+    session = get_session()
+    
+    # Upsert document
+    doc_fields = {
+        "source_id": source_id,
+        "title": meta_norm["title"],
+        "doc_type": meta_norm["doc_type"],
+        "framework": meta_norm["framework"],
+        "jurisdiction": meta_norm["jurisdiction"],
+        "authority_level": meta_norm["authority_level"],
+        "effective_date": date.fromisoformat(meta_norm["effective_date"]),
+        "version": meta_norm["version"],
+        "ingest_ts": datetime.utcnow().isoformat(),
+        "source_path": pdf_path,
+        "hash": source_id
+    }
+    upsert_document(session, doc_fields)
+    
+    # Prepare chunks for insertion
+    chunk_payload = []
+    for i, (chunk_text, vector) in enumerate(zip(chunks, vectors), start=1):
+        chunk_payload.append({
+            "chunk_id": f"{source_id}:{i:04d}",
+            "source_id": source_id,
+            "section_path": meta_norm["title"],  # Simple fallback
+            "text": chunk_text,
+            "tokens": count_tokens(chunk_text),
+            "page_start": 1,  # Simplified for single upload
+            "page_end": len(pages),
+            "framework": meta_norm["framework"],
+            "jurisdiction": meta_norm["jurisdiction"],
+            "doc_type": meta_norm["doc_type"],
+            "authority_level": meta_norm["authority_level"],
+            "effective_date": date.fromisoformat(meta_norm["effective_date"]),
+            "version": meta_norm["version"],
+            "embedding": vector.tolist(),
+        })
+    
+    chunks_added = upsert_chunks(session, chunk_payload)
+    session.commit()
+    
+    return {"accepted": True, "source_id": source_id, "chunks": len(chunks)}
 
 if __name__ == "__main__":
     run_ingest()
