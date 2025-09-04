@@ -1,7 +1,9 @@
 import React from "react";
 
 export default function Citations({ items }:{ items:any[] }) {
-  if (!items?.length) return <p className="muted">No citations yet.</p>;
+  if (!items || !items.length) {
+    return <p className="empty">Citations will appear here when evidence supports the answer.</p>;
+  }
   return (
     <div className="cites">
       {items.map((c, idx) => (
