@@ -30,17 +30,25 @@ export default function Dropzone({
     } finally { setBusy(false); }
   }, [notify]);
 
-  const onInput = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) upload(f); };
-  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setHover(true); };
-  const onDragLeave = () => setHover(false);
-  const onDropEvt = (e: React.DragEvent) => { e.preventDefault(); setHover(false); const f = e.dataTransfer.files?.[0]; if (f) upload(f); };
+  const onDrop = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setHover(false);
+    const file = e.dataTransfer.files?.[0]; if (file) upload(file);
+  };
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (file) upload(file);
+  };
 
   return (
-    <div className={`drop ${busy ? "busy" : ""} ${hover ? "hover" : ""}`} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDropEvt}>
-      <div className="pulse" />
+    <div className={`drop card ${hover ? "hover" : ""} ${busy ? "busy":""}`}
+         onDragOver={(e)=>{e.preventDefault(); setHover(true);}}
+         onDragLeave={()=>setHover(false)}
+         onDrop={onDrop}
+         aria-busy={busy}>
+      <div className="pulse" aria-hidden />
       <p>{msg}</p>
-      <input id="file" type="file" accept="application/pdf" onChange={onInput} hidden />
-      <label className="btn" htmlFor="file">Choose PDF</label>
+      <label className="btn" style={{display:"inline-block",cursor:"pointer"}}>
+        <input type="file" accept="application/pdf" onChange={onPick} style={{display:"none"}} />
+        Choose PDF
+      </label>
     </div>
   );
 }
