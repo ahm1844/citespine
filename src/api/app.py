@@ -6,8 +6,14 @@ from typing import Dict, Any, List, Optional
 import time, csv, shutil
 from pathlib import Path
 from datetime import datetime
+from opentelemetry.trace import get_current_span
 from ..common.logging import get_logger
 from ..common.progress import log_progress
+
+def set_trace_header(resp: Response):
+    span = get_current_span()
+    ctx = span.get_span_context()
+    resp.headers["X-Trace-Id"] = format(ctx.trace_id, "032x")
 from ..common.constants import EXCEPTIONS_CSV, PROCESSED_DIR
 from ..common.config import SETTINGS
 from ..db.session import get_session

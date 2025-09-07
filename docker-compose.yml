@@ -36,5 +36,14 @@ services:
       postgres:
         condition: service_healthy
 
+  k6:
+    image: grafana/k6:latest
+    profiles: ["perf"]
+    depends_on: [api]
+    networks: ["default"]
+    working_dir: /work
+    volumes:
+      - ./:/work
+
 volumes:
   pgdata:

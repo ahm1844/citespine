@@ -1,0 +1,52 @@
+meta:
+  dataset_minimums:
+    claims_total: 3000
+    time_travel_qs: 300
+    negative_qs: 200
+    filter_qs: 500
+  confidence: "95% (Clopper–Pearson)"
+  holdout_fraction: 0.30
+  error_budget_infra: 0.005  # 0.5% infra flakes allowed (tagged as infra)
+  reproducibility:
+    seed_policy: "Pin seeds and model hashes; any model change requires re-baseline"
+
+quality:
+  faithfulness:
+    unsupported_claim_rate: {lte: 0.0}
+    citation_span_precision: {gte: 0.98}
+    citation_span_recall: {gte: 0.98}
+  retrieval_rank:
+    mrr_at_10: {gte: 0.70}
+    first_correct_rank_median: {lte: 2}
+
+temporal_accuracy:
+  version_leakage_rate: {lte: 0.02}
+
+filters:
+  retrieval_leak_rate: {lte: 0.005}
+  answer_leak_rate: {lte: 0.0}
+
+negatives:
+  false_positive_rate: {lte: 0.0}
+
+structured_outputs:
+  field_source_coverage: {gte: 0.98}
+  false_fills_rate: {lte: 0.0}
+
+performance:
+  p50_ms: {lte: 2500}
+  p95_ms: {lte: 8000}
+  error_rate: {lte: 0.01}
+  concurrency_notes: "Measured at ~5 concurrent users on ref hardware"
+
+reproducibility:
+  retrieval_identity: {eq: 1.0}
+  answer_similarity: {gte: 0.95}
+
+security:
+  unintended_egress_events: {eq: 0}
+  critical_cves: {eq: 0}
+
+pii:
+  redaction_recall: {gte: 0.95}
+  redaction_precision: {gte: 0.98}

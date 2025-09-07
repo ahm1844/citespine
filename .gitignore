@@ -121,9 +121,16 @@ data/uploads/
 data/processed/
 data/manifests/
 data/eval/
+data/security/
 data/raw/*.pdf
 **/index_manifest.json
 logs/
+
+# evaluation artifacts
+*.pcap
+*.sig
+checksums.txt
+public/trust.html
 
 # frontend
 frontend/node_modules/

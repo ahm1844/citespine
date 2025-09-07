@@ -1,0 +1,12 @@
+{
+  "current": "v1",
+  "versions": {
+    "v1": {
+      "time_travel.jsonl": "34a4cf57391dba64522057499ecbcc948e6027c18e67a337161c9882d8e6694d",
+      "negative_controls.jsonl": "4e076332cebb2d8d52cb148539a220de561c8ff5fc0237ecd45212c191458286",
+      "adversarial_prompts.jsonl": "f25338a5a1bf47f2e94a236b0ea42792885f87f3de3acbabf39226673b6b4ed4",
+      "tables_ocr.jsonl": "67a24633a2b41561a566d661f98b30fd6b23873cc03953acdc88cea6a0f806e6",
+      "conflicts.jsonl": "3f5c199c21490609386ddb7db478c0229ab36bf3e4e5be77576f124f38ce1543"
+    }
+  }
+}
