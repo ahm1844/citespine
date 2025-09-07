@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field, EmailStr
 from typing import Dict, Any, List, Optional
 import time, csv, shutil
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+import asyncio
 from opentelemetry.trace import get_current_span
 from ..common.logging import get_logger
 from ..common.progress import log_progress
@@ -31,6 +32,28 @@ app = FastAPI(title="CiteSpine API", version="0.1.0")
 # Serve public landing page and built React app
 app.mount("/site", StaticFiles(directory="public", html=True), name="site")
 app.mount("/app", StaticFiles(directory="frontend/dist", html=True), name="app")
+
+# Demo routes (if enabled)
+if SETTINGS.DEMO_MODE:
+    from .routes_demo import router as demo_router
+    app.include_router(demo_router, prefix="/demo", tags=["demo"])
+
+    # TTL cleanup for demo documents
+    async def purge_expired_demo_docs():
+        # TODO: Implement: delete from DB where namespace=SETTINGS.DEMO_NAMESPACE and expires_at < now
+        # If you have ORM models, write the query here. For now, leave as TODO/log.
+        pass
+
+    @app.on_event("startup")
+    async def _start_demo_gc():
+        async def loop():
+            while True:
+                try:
+                    await purge_expired_demo_docs()
+                except Exception:
+                    pass
+                await asyncio.sleep(300)  # every 5 minutes
+        asyncio.create_task(loop())
 
 # Authentication routes
 @app.get("/auth/invite")

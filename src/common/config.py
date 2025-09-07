@@ -66,4 +66,12 @@ class Settings:
     SYN_EXPAND_ENABLE: bool = os.getenv("SYN_EXPAND_ENABLE", "false").lower() == "true"
     SYN_DEBUG_LOG: bool = os.getenv("SYN_DEBUG_LOG", "false").lower() == "true"
 
+    # Demo Mode Configuration
+    DEMO_MODE: bool = os.getenv("DEMO_MODE","false").lower() in ("1","true","yes")
+    DEMO_RATE_LIMIT_PER_IP: str = os.getenv("DEMO_RATE_LIMIT_PER_IP","20/hour")
+    DEMO_MAX_FILE_MB: int = int(os.getenv("DEMO_MAX_FILE_MB","10"))
+    DEMO_DELETE_AFTER_MIN: int = int(os.getenv("DEMO_DELETE_AFTER_MIN","60"))
+    DEMO_NAMESPACE: str = os.getenv("DEMO_NAMESPACE","demo")
+    DEMO_EXPORT_REQUIRE_EMAIL: bool = os.getenv("DEMO_EXPORT_REQUIRE_EMAIL","true").lower() in ("1","true","yes")
+
 SETTINGS = Settings()
