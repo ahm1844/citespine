@@ -39,10 +39,10 @@ def ingest_single_pdf_bytesio(file_content: bytes, filename: str, namespace: str
         # Default metadata for demo uploads
         metadata = {
             "title": filename or "Demo Upload",
-            "doc_type": "other",
+            "doc_type": "standard",
             "framework": "Other", 
             "jurisdiction": "US",
-            "authority_level": "guidance",
+            "authority_level": "authoritative",
             "effective_date": "2024-01-01",
             "version": "1.0"
         }

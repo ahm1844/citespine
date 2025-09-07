@@ -152,8 +152,13 @@ def ingest_single_pdf(pdf_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]
         return {"accepted": False, "errors": {"chunk": "No chunks produced"}}
 
     # Generate embeddings
-    embedder = EmbeddingProvider()
-    vectors = embedder.embed_texts(chunks)
+    try:
+        embedder = EmbeddingProvider()
+        vectors = embedder.embed_texts(chunks)
+        if len(vectors) != len(chunks):
+            return {"accepted": False, "errors": {"embedding": f"Chunks/vectors length mismatch: {len(chunks)} vs {len(vectors)}"}}
+    except Exception as e:
+        return {"accepted": False, "errors": {"embedding": f"Embedding failed: {str(e)}"}}
     
     # Prepare data for database insertion
     session = get_session()
@@ -176,7 +181,11 @@ def ingest_single_pdf(pdf_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]
     
     # Prepare chunks for insertion
     chunk_payload = []
-    for i, (chunk_text, vector) in enumerate(zip(chunks, vectors), start=1):
+    chunk_vector_pairs = list(zip(chunks, vectors))
+    if not chunk_vector_pairs:
+        return {"accepted": False, "errors": {"zip": f"Empty chunk/vector pairs. chunks={len(chunks)}, vectors={len(vectors)}"}}
+    
+    for i, (chunk_text, vector) in enumerate(chunk_vector_pairs, start=1):
         chunk_payload.append({
             "chunk_id": f"{source_id}:{i:04d}",
             "source_id": source_id,

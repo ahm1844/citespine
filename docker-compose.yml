@@ -28,6 +28,9 @@ services:
       CHUNK_SIZE: "900"
       CHUNK_OVERLAP: "150"
       INVITE_TOKEN: "letmein"
+      OFFLINE: "true"
+      DEMO_MODE: "true"
+      DEMO_RATE_LIMIT_PER_IP: "100/hour"
     volumes:
       - ./:/app
     ports: ["8000:8000"]

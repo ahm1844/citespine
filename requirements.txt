@@ -42,3 +42,8 @@ pinecone-client==3.2.2
 requests==2.32.3
 tqdm==4.66.4
 tenacity==8.5.0
+
+# OpenTelemetry
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-instrumentation==0.42b0
