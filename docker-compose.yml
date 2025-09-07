@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -42,6 +41,8 @@ services:
     depends_on: [api]
     networks: ["default"]
     working_dir: /work
+    environment:
+      - K6_API_KEY=${K6_API_KEY}
     volumes:
       - ./:/work
 

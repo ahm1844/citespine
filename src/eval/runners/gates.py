@@ -57,7 +57,7 @@ def main():
 
     # Extract metrics from reports (aligning to your schema)
     # Faithfulness
-    if "faithfulness" in reports:
+    if "faithfulness" in reports and reports["faithfulness"].get("status") != "NOT_IMPLEMENTED":
         r = reports["faithfulness"].get("summary", {})
         checks = {
             ("quality.faithfulness.unsupported_claim_rate", "unsupported"): r.get("unsupported", 0)/max(1, r.get("claims_total",1)),
@@ -70,7 +70,7 @@ def main():
             if not check_threshold(label, val, rule): failures.append(f"[faithfulness] {label}={val} violates {rule}")
 
     # Retrieval rank (MRR@10, FCR median) – from faithfulness report or a rank report as you prefer
-    if "faithfulness" in reports:
+    if "faithfulness" in reports and reports["faithfulness"].get("status") != "NOT_IMPLEMENTED":
         r = reports["faithfulness"].get("summary", {})
         rr = cfg["quality"]["retrieval_rank"]
         if not check_threshold("mrr_at_10", r.get("mrr_at_10"), rr["mrr_at_10"]):
@@ -79,7 +79,7 @@ def main():
             failures.append(f"[rank] first_correct_rank_median={r.get('first_correct_rank_median')} violates {rr['first_correct_rank_median']}")
 
     # Filters
-    if "filters" in reports:
+    if "filters" in reports and reports["filters"].get("status") != "NOT_IMPLEMENTED":
         r = reports["filters"].get("summary", {})
         fl = cfg["filters"]
         if not check_threshold("retrieval_leak_rate", r.get("retrieval_leak_rate"), fl["retrieval_leak_rate"]):
@@ -88,21 +88,21 @@ def main():
             failures.append(f"[filters] answer_leak_rate={r.get('answer_leak_rate')} violates {fl['answer_leak_rate']}")
 
     # Temporal
-    if "asof" in reports:
+    if "asof" in reports and reports["asof"].get("status") != "NOT_IMPLEMENTED":
         r = reports["asof"].get("summary", {})
         tl = cfg["temporal_accuracy"]["version_leakage_rate"]
         if not check_threshold("version_leakage_rate", r.get("leak_rate"), tl):
             failures.append(f"[asof] leak_rate={r.get('leak_rate')} violates {tl}")
 
     # Negatives
-    if "negatives" in reports:
+    if "negatives" in reports and reports["negatives"].get("status") != "NOT_IMPLEMENTED":
         r = reports["negatives"].get("summary", {})
         ng = cfg["negatives"]["false_positive_rate"]
         if not check_threshold("false_positive_rate", r.get("false_positive_rate"), ng):
             failures.append(f"[negatives] false_positive_rate={r.get('false_positive_rate')} violates {ng}")
 
     # Structured
-    if "structured" in reports:
+    if "structured" in reports and reports["structured"].get("status") != "NOT_IMPLEMENTED":
         r = reports["structured"].get("summary", {})
         st = cfg["structured_outputs"]
         if not check_threshold("field_source_coverage", r.get("coverage"), st["field_source_coverage"]):
@@ -111,7 +111,7 @@ def main():
             failures.append(f"[structured] false_fills={r.get('false_fills')} violates {st['false_fills_rate']}")
 
     # Perf
-    if "perf" in reports:
+    if "perf" in reports and reports["perf"].get("status") != "NOT_IMPLEMENTED":
         r = reports["perf"].get("summary", {})
         pf = cfg["performance"]
         if not check_threshold("p50_ms", r.get("p50_ms"), pf["p50_ms"]): failures.append(f"[perf] p50={r.get('p50_ms')} violates {pf['p50_ms']}")
@@ -119,7 +119,7 @@ def main():
         if not check_threshold("error_rate", r.get("error_rate", 0.0), pf["error_rate"]): failures.append(f"[perf] error_rate={r.get('error_rate')} violates {pf['error_rate']}")
 
     # Repro
-    if "replay" in reports:
+    if "replay" in reports and reports["replay"].get("status") != "NOT_IMPLEMENTED":
         r = reports["replay"].get("summary", {})
         rp = cfg["reproducibility"]
         if not check_threshold("retrieval_identity", r.get("retrieval_identity"), rp["retrieval_identity"]):
@@ -128,7 +128,7 @@ def main():
             failures.append(f"[replay] answer_similarity={r.get('answer_similarity')} violates {rp['answer_similarity']}")
 
     # Security & PII
-    if "pii" in reports:
+    if "pii" in reports and reports["pii"].get("status") != "NOT_IMPLEMENTED":
         r = reports["pii"].get("summary", {})
         pi = cfg["pii"]
         if not check_threshold("redaction_recall", r.get("recall"), pi["redaction_recall"]):

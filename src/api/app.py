@@ -46,6 +46,10 @@ class Lead(BaseModel):
     company: str | None = None
     message: str | None = None
 
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
 @app.post("/public/lead")
 def public_lead(lead: Lead, request: Request):
     new = not LEADS_CSV.exists()

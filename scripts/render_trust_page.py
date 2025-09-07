@@ -1,4 +1,5 @@
-import json, subprocess, datetime, os, yaml, pathlib
+import json, subprocess, os, yaml, pathlib
+from datetime import datetime, timezone
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 def read(p): return json.load(open(p, "r", encoding="utf-8"))
 def get_commit():
@@ -24,7 +25,7 @@ for k,p in reports.items():
     else:
         vals[k]={"status":"missing"}
 
-now = datetime.datetime.utcnow().isoformat()+"Z"
+now = datetime.now(timezone.utc).isoformat()
 commit = get_commit()
 html = f"""<!doctype html><html><head><meta charset="utf-8"><title>CiteSpine Trust</title>
 <style>body{{font-family:system-ui;margin:2rem}} code{{background:#f5f5f5;padding:.1rem .3rem}}</style></head><body>

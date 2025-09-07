@@ -28,13 +28,15 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://api:8000/query'; // service name in Compose network
+  const apiKey = __ENV.K6_API_KEY;
+  const url = 'http://api:8000/v1/query'; // service name in Compose network
   const payload = JSON.stringify({
     q: "What does PCAOB require for ICFR audits?",
     filters: { framework: "Other", jurisdiction: "US", doc_type: "standard", authority_level: "authoritative", as_of: "2024-12-31" },
     top_k: 10, probes: 15
   });
-  const res = http.post(url, payload, { headers: { 'Content-Type': 'application/json' } });
+  const params = { headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey } };
+  const res = http.post(url, payload, params);
   check(res, { '200': (r) => r.status === 200 });
   sleep(1);
 }
