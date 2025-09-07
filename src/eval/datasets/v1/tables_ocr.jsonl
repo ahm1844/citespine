@@ -1,0 +1,2 @@
+{"id":"tbl_quant_threshold","q":"What quantitative threshold triggers disclosure in this table?","doc":"sample_table.pdf"}
+{"id":"tbl_scanned_elements","q":"Extract the tagged primary statement element names from this scanned page and cite.","doc":"scanned_statement_page.pdf"}

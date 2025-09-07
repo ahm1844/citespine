@@ -1,0 +1,1 @@
+{"id":"conf_pcaob_policy","q":"If internal policy conflicts with PCAOB documentation requirements, which prevails?","filters":{"framework":"Other","jurisdiction":"US","doc_type":"policy","authority_level":"internal","as_of":"2024-12-31"},"expect":"External authoritative guidance prevails; cite PCAOB and flag conflict"}
