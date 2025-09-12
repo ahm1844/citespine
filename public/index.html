@@ -1,54 +1,13 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>CiteSpine — Answers with receipts</title>
-  <style>
-    body{font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111}
-    .wrap{max-width:880px;margin:0 auto;padding:40px 20px}
-    h1{font-size:40px;margin:0 0 10px}
-    p.lead{font-size:18px;margin:0 0 16px;color:#333}
-    .card{background:#f8f9fb;border:1px solid #e7e9ee;border-radius:12px;padding:16px}
-    form{display:grid;gap:10px;margin-top:8px}
-    input,textarea,button{font:inherit;padding:10px;border:1px solid #cfd3da;border-radius:10px}
-    button{background:#111;color:#fff;border:none;cursor:pointer}
-    .muted{color:#666}
-    .ok{color:#0a7a3c}.err{color:#b00020}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>CiteSpine</h1>
-    <p class="lead">Answers with receipts for finance and audit. Ask a question about your standards or filings. We find the exact paragraph and show the citation. If there's no source, we say so.</p>
-
-    <div class="card">
-      <h3>Request a demo</h3>
-      <form id="lead">
-        <input name="name" placeholder="Your name" required/>
-        <input name="email" type="email" placeholder="Work email" required/>
-        <input name="company" placeholder="Company (optional)"/>
-        <textarea name="message" rows="4" placeholder="What would you like to use this for?"></textarea>
-        <button type="submit">Send</button>
-        <span id="msg" class="muted"></span>
-      </form>
-    </div>
-
-    <p class="muted" style="margin-top:12px">Your files stay in your workspace. We don't train on your content. Remove your data any time.</p>
-  </div>
-
-  <script>
-    const f=document.getElementById('lead'),msg=document.getElementById('msg');
-    f.addEventListener('submit', async e=>{
-      e.preventDefault(); msg.textContent='Sending…';
-      const body=Object.fromEntries(new FormData(f).entries());
-      try{
-        const res=await fetch('/public/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-        if(!res.ok) throw new Error('fail');
-        msg.textContent='Thanks — we'll email you to schedule.'; msg.className='ok';
-        f.reset();
-      }catch(_){ msg.textContent='Could not send. Email hello@yourdomain.com instead.'; msg.className='err'; }
-    });
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CiteSpine — Demo</title>
+    <script type="module" crossorigin src="/app/assets/index-BE3TyY8C.js"></script>
+    <link rel="stylesheet" crossorigin href="/app/assets/index-C_Clw-mx.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

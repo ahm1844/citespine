@@ -14,6 +14,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   api:
     build:
       context: .
@@ -31,11 +41,19 @@ services:
       OFFLINE: "true"
       DEMO_MODE: "true"
       DEMO_RATE_LIMIT_PER_IP: "100/hour"
+      # Analysis configuration
+      REDIS_URL: "redis://redis:6379/0"
+      ANALYSIS_CACHE_TTL: "604800"
+      ANALYSIS_MODE: "fast"
+      OLLAMA_URL: "http://localhost:11434"
+      OLLAMA_MODEL: "llama3"
     volumes:
       - ./:/app
     ports: ["8000:8000"]
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   k6:

@@ -1,3 +1,98 @@
+# Controlled vocabularies with synonyms for document-aware metadata extraction
+frameworks:
+  IFRS:
+    - "IFRS"
+    - "International Financial Reporting Standards"
+    - "IFRS-15"
+    - "IFRS15"
+  US_GAAP:
+    - "US_GAAP"
+    - "US GAAP"
+    - "GAAP"
+    - "Generally Accepted Accounting Principles"
+  Other:
+    - "Other"
+    - "PCAOB"
+    - "SEC"
+    - "ESMA"
+
+jurisdictions:
+  US:
+    - "US"
+    - "USA"
+    - "United States"
+    - "United States of America"
+  EU:
+    - "EU"
+    - "Europe"
+    - "European Union"
+    - "European"
+  UK:
+    - "UK"
+    - "United Kingdom"
+    - "Britain"
+  Global:
+    - "Global"
+    - "International"
+    - "Worldwide"
+  Other:
+    - "Other"
+
+doc_types:
+  standard:
+    - "standard"
+    - "auditing standard"
+    - "AS"
+  release:
+    - "release"
+    - "release no"
+    - "release number"
+  order:
+    - "order"
+    - "order granting"
+    - "order approving"
+  manual:
+    - "manual"
+    - "reporting manual"
+    - "financial reporting manual"
+  guidelines:
+    - "guidelines"
+    - "guidance"
+    - "staff guidance"
+  policy:
+    - "policy"
+    - "staff policy"
+  filing:
+    - "filing"
+    - "form"
+  memo:
+    - "memo"
+    - "memorandum"
+  qna:
+    - "qna"
+    - "q&a"
+    - "questions and answers"
+  staff_alert:
+    - "staff alert"
+    - "practice alert"
+    - "staff audit practice alert"
+
+authority_levels:
+  authoritative:
+    - "authoritative"
+    - "official"
+    - "regulatory"
+  interpretive:
+    - "interpretive"
+    - "interpretative"
+    - "staff"
+    - "guidance"
+  internal_policy:
+    - "internal_policy"
+    - "internal"
+    - "firm policy"
+
+# Legacy format for backward compatibility
 framework:
   allowed: ["IFRS","US_GAAP","Other"]
   synonyms:
@@ -12,7 +107,7 @@ jurisdiction:
     european union: "EU"
 
 doc_type:
-  allowed: ["standard","filing","policy","memo","disclosure"]
+  allowed: ["standard","release","order","manual","guidelines","policy","filing","memo","qna","staff_alert"]
 
 authority_level:
   allowed: ["authoritative","interpretive","internal_policy"]

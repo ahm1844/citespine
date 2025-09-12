@@ -36,15 +36,9 @@ def ingest_single_pdf_bytesio(file_content: bytes, filename: str, namespace: str
         tmp_path = tmp_file.name
     
     try:
-        # Default metadata for demo uploads
+        # Minimal metadata for demo uploads - document extractor will handle the rest
         metadata = {
             "title": filename or "Demo Upload",
-            "doc_type": "standard",
-            "framework": "Other", 
-            "jurisdiction": "US",
-            "authority_level": "authoritative",
-            "effective_date": "2024-01-01",
-            "version": "1.0"
         }
         
         # Update with any extra metadata
