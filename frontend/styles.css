@@ -235,6 +235,189 @@ input[type=number]{appearance:textfield;}
 }
 @keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 
+/* ----------------------------- Suggestions Animation ----------------------------- */
+.suggestions-container {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease-out;
+  margin-bottom: var(--s-4);
+}
+
+.suggestions-container.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.animated-suggestions .suggestion-chip {
+  opacity: 0;
+  transform: translateY(8px) scale(0.95);
+  animation: suggestionFadeIn 0.4s ease-out forwards;
+}
+
+.suggestion-chip {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #2a3248;
+  background: linear-gradient(135deg, #171c2a 0%, #1e2536 100%);
+}
+
+.suggestion-chip:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(90, 160, 255, 0.2);
+}
+
+.suggestion-chip:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@keyframes suggestionFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ----------------------------- Document Overview ----------------------------- */
+.overview-card { 
+  border: 1px solid var(--border); 
+  border-radius: 12px; 
+  background: linear-gradient(180deg, rgba(255,255,255,.01), rgba(255,255,255,.005)), var(--surface); 
+  padding: 16px; 
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.overview-title { 
+  font-weight: 600; 
+  font-size: 14px; 
+  opacity: .85; 
+  display: flex; 
+  gap: 8px; 
+  align-items: center; 
+  margin-bottom: 12px;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  margin-left: auto;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.collapse-btn:hover {
+  background-color: var(--border);
+}
+
+.overview-summary {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.overview-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 12px; 
+}
+
+@media (max-width: 768px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.overview-section h5 { 
+  margin: 8px 0 6px; 
+  font-size: 13px; 
+  opacity: .85; 
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.overview-item {
+  margin-bottom: 8px;
+}
+
+.overview-item p {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.citations-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.citation-chip { 
+  font-size: 12px; 
+  background: var(--card); 
+  border: 1px solid var(--border);
+  border-radius: 10px; 
+  padding: 4px 8px; 
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--muted);
+}
+
+.citation-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.cite-expand { 
+  padding: 10px; 
+  border-left: 2px solid var(--accent); 
+  background: var(--surface); 
+  margin-top: 8px;
+  border-radius: 4px;
+}
+
+.cite-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.cite-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hl { 
+  background: rgba(255, 230, 150, .55); 
+  border-radius: 2px; 
+  padding: 1px 2px;
+}
+
+/* Animations */
+.animated-suggestions .chip { 
+  animation: fadeUp .25s ease both; 
+}
+
+@keyframes fadeUp { 
+  from { 
+    opacity: 0; 
+    transform: translateY(6px);
+  } 
+  to { 
+    opacity: 1; 
+    transform: none;
+  } 
+}
+
 /* ------------------------------ History List ------------------------------ */
 .hist-list{display:grid; gap:var(--s-2)}
 .hist-item{
@@ -294,3 +477,74 @@ input[type=number]{appearance:textfield;}
 
 /* empty history card text */
 .empty-card{ color: var(--muted); }
+
+/* ----------------------------- Citation & Overview Improvements ----------------------------- */
+.citation-chip { 
+  font-size: 12px; 
+  background: var(--surface-2); 
+  border-radius: 10px; 
+  padding: 4px 8px; 
+  cursor: pointer; 
+  border: none; 
+  color: var(--text);
+  transition: background-color 0.2s ease;
+}
+
+.citation-chip:hover {
+  background: var(--surface-3);
+}
+
+.cite-expand { 
+  padding: 10px; 
+  border-left: 2px solid var(--surface-3); 
+  background: var(--surface-1); 
+  margin-top: 8px; 
+  border-radius: 0 4px 4px 0;
+}
+
+.cite-text { 
+  line-height: 1.45; 
+  font-size: 14px;
+}
+
+.hl { 
+  background: rgba(255, 230, 150, 0.55); 
+  border-radius: 2px; 
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+/* Enhanced Overview Card */
+.overview-card { 
+  border: 1px solid var(--surface-3); 
+  border-radius: 12px; 
+  background: var(--surface-1); 
+  padding: 16px; 
+  margin: 12px 0 16px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.overview-title { 
+  font-weight: 600; 
+  font-size: 14px; 
+  opacity: 0.9; 
+  display: flex; 
+  gap: 8px; 
+  align-items: center; 
+  justify-content: space-between; 
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.collapse-btn:hover {
+  background: var(--surface-2);
+}

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body, Depends, UploadFile, File, Form, Response, HTTPException, Request
+from fastapi import FastAPI, Body, Depends, UploadFile, File, Form, Response, HTTPException, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, EmailStr
@@ -24,10 +24,17 @@ from ..ingest.runner import run_ingest, ingest_single_pdf
 from ..obs.manifest import write_manifest
 from ..artifacts.memo import build_memo
 from .auth import require_invite, set_invite_cookie, require_api_key
+from .schemas import UploadResponse, AnalysisMode
+from . import routes_analysis, routes_query
+from .routes_analysis import _run_analysis
 
 log = get_logger("api")
 
 app = FastAPI(title="CiteSpine API", version="0.1.0")
+
+# Include new routers
+app.include_router(routes_analysis.router)
+app.include_router(routes_query.router)
 
 # Serve public landing page and built React app
 app.mount("/site", StaticFiles(directory="public", html=True), name="site")
@@ -82,20 +89,16 @@ def public_lead(lead: Lead, request: Request):
         w.writerow([datetime.utcnow().isoformat(), lead.name, lead.email, lead.company or "", lead.message or "", request.client.host if request.client else ""])
     return {"ok": True}
 
-# Suggestions for first-time users (invite-gated)
-DEFAULT_SUGGESTIONS = [
-    "What does PCAOB require for ICFR audits?",
-    "What are ESEF inline XBRL tagging requirements?",
-    "Show disclosure guidance for revenue recognition.",
-]
-
+# Dynamic suggestions come from document analysis now
 @app.get("/suggestions", dependencies=[Depends(require_invite)])
 def suggestions():
-    return {"suggestions": DEFAULT_SUGGESTIONS}
+    # No static suggestions - use document analysis for dynamic suggestions
+    return {"suggestions": []}
 
-# Upload single PDF
-@app.post("/upload", dependencies=[Depends(require_invite)])
+# Upload single PDF with background analysis
+@app.post("/upload", response_model=UploadResponse, dependencies=[Depends(require_invite)])
 async def upload_pdf(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     framework: Optional[str] = Form(None),
     jurisdiction: Optional[str] = Form(None),
@@ -120,7 +123,23 @@ async def upload_pdf(
         "effective_date": effective_date,
         "version": version,
     }
-    return ingest_single_pdf(str(dest), meta)
+    
+    # Run ingest synchronously
+    result = ingest_single_pdf(str(dest), meta)
+    
+    if result.get("accepted"):
+        # Schedule background analysis after successful ingest
+        source_id = result["source_id"]
+        with get_current_span() as sp:
+            sp.set_attribute("upload.source_id", source_id)
+            sp.set_attribute("upload.scheduling_analysis", True)
+            background_tasks.add_task(_run_analysis, source_id=source_id, mode=getattr(SETTINGS, "ANALYSIS_MODE", "fast"))
+            log.info("upload.scheduled_analysis source_id=%s mode=%s", source_id, getattr(SETTINGS, "ANALYSIS_MODE", "fast"))
+        
+        return UploadResponse(accepted=True, source_id=source_id, analysis_ready=False)
+    else:
+        log.warning("upload.rejected errors=%s", result.get("errors", {}))
+        return UploadResponse(accepted=False, source_id="", message="Upload failed", analysis_ready=False)
 
 class QueryFilters(BaseModel):
     framework: str | None = None
@@ -155,14 +174,24 @@ def api_exceptions():
     except FileNotFoundError:
         return {"csv_path": EXCEPTIONS_CSV, "rows": []}
 
-# UI query (invite)
+# UI query (invite) - Enhanced with LLM synthesis
 @app.post("/query", dependencies=[Depends(require_invite)])
-def ui_query(req: QueryRequest):
+async def ui_query(req: QueryRequest):
     session = get_session()
     t0 = time.perf_counter()
     hits = retrieve_any(session, req.q, req.filters, req.top_k, probes=req.probes or 10)
     latency_ms = int((time.perf_counter() - t0) * 1000)
-    out = compose_answer(hits)
+    
+    # Use enhanced LLM answer composition
+    from ..answer.compose import compose_answer_llm
+    retrieval_metrics = {
+        "avg_score": sum(1.0 - min(h.get("distance", 0.5), 1.0) for h in hits[:5]) / max(len(hits[:5]), 1),
+        "chunks_retrieved": len(hits),
+        "latency_ms": latency_ms
+    }
+    
+    out = await compose_answer_llm(hits, req.q, retrieval_metrics, provider=SETTINGS.LLM_PROVIDER)
+    
     manifest_path = write_manifest("query", {
         "q": req.q,
         "filters": req.filters,
@@ -174,14 +203,24 @@ def ui_query(req: QueryRequest):
     })
     return {**out, "run_manifest": manifest_path, "latency_ms": latency_ms, "backend": SETTINGS.VECTOR_BACKEND}
 
-# Programmatic query (API key)
+# Programmatic query (API key) - Enhanced with LLM synthesis  
 @app.post("/v1/query", dependencies=[Depends(require_api_key)])
-def api_query_v1(req: QueryRequest):
+async def api_query_v1(req: QueryRequest):
     session = get_session()
     t0 = time.perf_counter()
     hits = retrieve_any(session, req.q, req.filters, req.top_k, probes=req.probes or 10)
     latency_ms = int((time.perf_counter() - t0) * 1000)
-    out = compose_answer(hits)
+    
+    # Use enhanced LLM answer composition
+    from ..answer.compose import compose_answer_llm
+    retrieval_metrics = {
+        "avg_score": sum(1.0 - min(h.get("distance", 0.5), 1.0) for h in hits[:5]) / max(len(hits[:5]), 1),
+        "chunks_retrieved": len(hits),
+        "latency_ms": latency_ms
+    }
+    
+    out = await compose_answer_llm(hits, req.q, retrieval_metrics, provider=SETTINGS.LLM_PROVIDER)
+    
     manifest_path = write_manifest("query", {
         "q": req.q,
         "filters": req.filters,
